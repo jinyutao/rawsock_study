@@ -15,7 +15,7 @@ vpath %.o $(OBJ_DIR)
 
 CXXOBJS = $(patsubst %.cpp, %.o, $(CSRCS))
 
-all: $(OBJ_DIR) $(APPNAME)
+all: $(OBJ_DIR) lib $(APPNAME)
 
 $(APPNAME): $(CXXOBJS) $(STATICLIB_DIR)/lib$(STATICLIB).a
 	$(CC) $(LDFLAGS) -o $@ $(addprefix $(OBJ_DIR)/, $(CXXOBJS)) -L$(STATICLIB_DIR) -l$(STATICLIB) -lpthread -lstdc++
@@ -35,4 +35,5 @@ clean:
 	rm -f $(APPNAME) $(CXXOBJS)
 	rm -rf $(OBJ_DIR)
 
-lib: $(STATICLIB_DIR)/lib$(STATICLIB).a
+lib:
+	cd $(STATICLIB_DIR) && $(MAKE)
