@@ -24,6 +24,12 @@ int mk_buf_send_ack(uint8_t * data_raw, int len,
     uint32_t snNo, uint32_t ackNo,
     const raw_sock_env_conf* gRawSockEnvConf);
 
+int mk_buf_echoreply(uint8_t * data_raw, int len,
+    uint16_t id, uint16_t sequence,
+    uint8_t * buff, int buff_len,
+    const raw_sock_env_conf* gRawSockEnvConf);
+
+
 int send_row_data(int sd, uint8_t * p, int len,
     const raw_sock_env_conf* gRawSockEnvConf);
 #endif

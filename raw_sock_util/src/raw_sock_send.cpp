@@ -11,8 +11,8 @@ int cp_eth_info(uint8_t * data_raw, int len,
     // Destination and Source MAC addresses
     memcpy (data_raw, gRawSockEnvConf->remote_mac, 6);
     memcpy (data_raw + 6, gRawSockEnvConf->host_mac, 6);
-    data_raw[12] = (ETH_P_IP >> 8) & 0xFF;          // ETH_P_IP / 256;
-    data_raw[13] = ETH_P_IP & 0xFF;   // ETH_P_IP % 256;
+    data_raw[12] = (ETH_P_IP >> 8) & 0xFF;  // ETH_P_IP / 256;
+    data_raw[13] = ETH_P_IP & 0xFF;         // ETH_P_IP % 256;
     return 14;
 }
 
@@ -240,6 +240,38 @@ int mk_buf_send_fin(uint8_t * data_raw, int len,
     data[36] = (chk >> 8) & 0xFF;
     data[37] = chk & 0xFF;
     // printf("%02x %02x\n", data[36], data[37]);
+    return SEND_LEN(bufflen + ethlen);
+}
+
+int mk_buf_echoreply(uint8_t * data_raw, int len,
+    uint16_t id, uint16_t sequence,
+    uint8_t * buff, int buff_len,
+    const raw_sock_env_conf* gRawSockEnvConf)
+{
+    int bufflen = 20 + 8 + buff_len;
+
+    // Destination and Source MAC addresses
+    int ethlen = cp_eth_info(data_raw, len, gRawSockEnvConf);
+
+    uint8_t * data = data_raw + ethlen;
+    data[0] = 0x45;
+    data[1] = 0;
+    data[2] = ((uint8_t*)&bufflen)[1];
+    data[3] = ((uint8_t*)&bufflen)[0];
+    data[4] = 0x00;
+    data[5] = 0x00;
+    data[6] = 0x00;
+    data[7] = 0x00;
+    data[8] = 0x40;
+    data[9] = IPPROTO_ICMP;
+    data[10] = 0;//chk sum;
+    data[11] = 0;//chk sum;
+    memcpy(data + 12, gRawSockEnvConf->host_ip, 4);
+    memcpy(data + 16, gRawSockEnvConf->remote_ip, 4);
+    uint16_t chk = chksum((uint16_t *)data, 20);
+    data[10] = (chk >> 8) & 0xFF;
+    data[11] = chk & 0xFF;
+
     return SEND_LEN(bufflen + ethlen);
 }
 

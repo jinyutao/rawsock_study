@@ -12,13 +12,14 @@
 #include <net/if.h>           // struct ifreq
 #include "raw_sock_util.h"
 typedef void (*recv_tcp)(struct ip *iph, struct tcphdr *tcph, uint8_t* pData, int datalen);
-typedef void (*recv_udp)(struct ip *iph, struct udphdr *tcph, uint8_t* pData, int datalen);
-typedef void (*recv_icmp)(struct ip *iph,  uint8_t* pData, int datalen);
+typedef void (*recv_udp)(struct ip *iph, struct udphdr *udph, uint8_t* pData, int datalen);
+typedef void (*recv_icmp)(struct ip *iph, struct icmphdr *icmph, uint8_t* pData, int datalen);
 struct raw_sock_recv_info
 {
     int     sFd;
     recv_tcp recvTcpFun;
     recv_udp recvUdpFun;
+    recv_icmp recvIcmpFun;
 };
 
 int create_recv_raw(

@@ -18,13 +18,16 @@ static void recv_tcp_cb(struct ip *iph, struct tcphdr *tcph, uint8_t* pData, int
 static void sync_recv(struct tcphdr *tcph);
 static void data_recv(struct tcphdr *tcph, uint8_t* pData, int datalen);
 
+static void recv_icmp_cb(struct ip *iph, struct icmphdr *icmph, uint8_t* pData, int datalen);
+
 std::mutex              gLock;
 std::condition_variable gNotify;
 raw_sock_recv_info gRawSockRecvInfo =
 {
     0,
     recv_tcp_cb,
-    NULL
+    NULL,
+    recv_icmp_cb
 };
 void initEnvConf()
 {
@@ -114,15 +117,21 @@ static void recv_tcp_cb(struct ip *iph, struct tcphdr *tcph, uint8_t* pData, int
     }
     if(tcph->th_flags & TH_FIN)
     {
+        uint16_t tmp_port = gRawSockEnvConf.remote_port;
+        gRawSockEnvConf.remote_port = ntohs(tcph->th_sport);
         ack_no = ntohl(tcph->th_ack);
         sn_no = ntohl(tcph->th_seq);
 
         will_send_ack_no = sn_no + 1;
         will_send_sn_no = ack_no;
-        int datalen = mk_buf_send_ack(data, IP_MAXPACKET,
-            will_send_sn_no, will_send_ack_no, &gRawSockEnvConf);
 
-        send_row_data(gRawSockRecvInfo.sFd, data, datalen, &gRawSockEnvConf);
+        send_row_data(
+            gRawSockRecvInfo.sFd,
+            data,
+            mk_buf_send_ack(data, IP_MAXPACKET,
+                will_send_sn_no, will_send_ack_no, &gRawSockEnvConf),
+            &gRawSockEnvConf);
+        gRawSockEnvConf.remote_port = tmp_port;
     }
 }
 
@@ -130,6 +139,17 @@ static void sync_recv(struct tcphdr *tcph)
 {
     if(gRawSockEnvConf.remote_port)
     {
+        uint16_t tmp_port = gRawSockEnvConf.remote_port;
+        gRawSockEnvConf.remote_port = ntohs(tcph->th_sport);
+
+        int tmp_send_ack_no = ntohl(tcph->th_seq) + 1;
+        int tmp_send_sn_no = ntohl(tcph->th_seq) + 1024;
+
+        int len = mk_buf_send_sync_recv(data, IP_MAXPACKET,
+            tmp_send_sn_no, tmp_send_ack_no, &gRawSockEnvConf);
+
+        send_row_data(gRawSockRecvInfo.sFd, data, len, &gRawSockEnvConf);
+        gRawSockEnvConf.remote_port = tmp_port;
         return;
     }
     ack_no = ntohl(tcph->th_ack);
@@ -160,5 +180,21 @@ static void data_recv(struct tcphdr *tcph, uint8_t* pData, int datalen)
     {
         std::unique_lock<std::mutex> lk(gLock);
         gNotify.notify_all();
+    }
+}
+
+void recv_icmp_cb(struct ip *iph, struct icmphdr *icmph, uint8_t* pData, int datalen)
+{
+    printf("recv_icmp_cb From %d.%d.%d.%d to %d.%d.%d.%d\n",
+        gRawSockEnvConf.remote_ip[0],gRawSockEnvConf.remote_ip[1],gRawSockEnvConf.remote_ip[2],gRawSockEnvConf.remote_ip[3],
+        gRawSockEnvConf.host_ip[0],gRawSockEnvConf.host_ip[1],gRawSockEnvConf.host_ip[2],gRawSockEnvConf.host_ip[3]);
+    printf("             type:%d code:%d datalen:%d\n",
+        icmph->type,icmph->code, datalen);
+    switch(icmph->type)
+    {
+    case ICMP_ECHO:
+        printf("             id:%d sequence:%d \n",
+            ntohs(icmph->un.echo.id),ntohs(icmph->un.echo.sequence));
+        break;
     }
 }

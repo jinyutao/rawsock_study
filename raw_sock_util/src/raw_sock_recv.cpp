@@ -121,6 +121,11 @@ static void* run_recv_cb(void* p)
             }
             case IPPROTO_ICMP:
             {
+                uint8_t*  picmpICMP = pdataIP + (pdataIP[0] & 0x0F) * 4 ;
+                struct icmphdr *icmph = (struct icmphdr *)picmpICMP;
+                if(gCBFun->recvIcmpFun)
+                    gCBFun->recvIcmpFun(iph, icmph,
+                        picmpICMP + sizeof(icmphdr), ntohs(iph->ip_len) - (pdataIP[0] & 0x0F) * 4 - sizeof(icmphdr));
                 break;
             }
             }
