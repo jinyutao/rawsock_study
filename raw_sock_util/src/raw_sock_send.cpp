@@ -3,8 +3,6 @@
 
 #include "raw_sock_send.h"
 
-#define SEND_LEN(l) ((l)<(46)?(46):(l))
-
 int cp_eth_info(uint8_t * data_raw, int len,
     const raw_sock_env_conf* gRawSockEnvConf)
 {
@@ -245,10 +243,10 @@ int mk_buf_send_fin(uint8_t * data_raw, int len,
 
 int mk_buf_echoreply(uint8_t * data_raw, int len,
     uint16_t id, uint16_t sequence,
-    uint8_t * buff, int buff_len,
+    uint8_t * pData, int datalen,
     const raw_sock_env_conf* gRawSockEnvConf)
 {
-    int bufflen = 20 + 8 + buff_len;
+    int bufflen = 20 + 8 + datalen;
 
     // Destination and Source MAC addresses
     int ethlen = cp_eth_info(data_raw, len, gRawSockEnvConf);
@@ -271,6 +269,17 @@ int mk_buf_echoreply(uint8_t * data_raw, int len,
     uint16_t chk = chksum((uint16_t *)data, 20);
     data[10] = (chk >> 8) & 0xFF;
     data[11] = chk & 0xFF;
+
+    //ICMP body
+    uint8_t*  picmpICMP = data + 20;
+    struct icmphdr *icmph = (struct icmphdr *)picmpICMP;
+    icmph->type = ICMP_ECHOREPLY;
+    icmph->code = 0;
+    icmph->checksum = 0;
+    icmph->un.echo.id = id;
+    icmph->un.echo.sequence = sequence;
+    memcpy(picmpICMP + sizeof(icmphdr), pData, datalen);
+    icmph->checksum = htons(chksum((uint16_t *)picmpICMP, datalen + sizeof(icmphdr)));
 
     return SEND_LEN(bufflen + ethlen);
 }

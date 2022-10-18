@@ -52,7 +52,7 @@ static int read_raw(int fd, uint8_t* pdata, int len,uint8_t** pdata_IP)
             memcpy(&protocolType, pdata + 6 + 6, 2);
             if(!memcmp(pdata+6, gEnvConf->remote_mac, IFHWADDRLEN) &&
                 (!memcmp(pdata, gEnvConf->host_mac, IFHWADDRLEN)  ||
-                    protocolType == ETH_P_ARP))
+                    protocolType != ETH_P_ARP))
             {
                 * pdata_IP = pdata + 14;
                 break;
@@ -133,6 +133,10 @@ static void* run_recv_cb(void* p)
         }
         case ETH_P_ARP:
         {
+            struct arphdr *arph = (struct arphdr *)pdataIP;
+            if(gCBFun->recvArpFun)
+                gCBFun->recvArpFun(arph, pdataIP + sizeof(struct arphdr),
+                    IP_MAXPACKET - sizeof(struct arphdr));
             break;
         }
         default:

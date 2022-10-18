@@ -23,6 +23,8 @@ struct raw_sock_env_conf
 #define MIN(a,b) ((a)<(b)?(a):(b))
 #endif
 
+#define SEND_LEN(l) ((l)<(46)?(46):(l))
+
 int init_row_env(raw_sock_env_conf* gRawSockEnvConf);
 uint16_t chksum(uint16_t* buff,int len);
 

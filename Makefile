@@ -1,6 +1,8 @@
 
 CSRCS = \
 	tc8TestCase.cpp \
+	arp_proc.cpp \
+	icmp_proc.cpp \
 	proc_agv.cpp \
 	main.cpp
 

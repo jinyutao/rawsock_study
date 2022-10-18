@@ -5,7 +5,8 @@
 #include "tc8TestCase.h"
 #include "raw_sock_recv.h"
 #include "raw_sock_send.h"
-
+#include "arp_proc.h"
+#include "icmp_proc.h"
 
 uint32_t ack_no;
 uint32_t sn_no;
@@ -18,8 +19,6 @@ static void recv_tcp_cb(struct ip *iph, struct tcphdr *tcph, uint8_t* pData, int
 static void sync_recv(struct tcphdr *tcph);
 static void data_recv(struct tcphdr *tcph, uint8_t* pData, int datalen);
 
-static void recv_icmp_cb(struct ip *iph, struct icmphdr *icmph, uint8_t* pData, int datalen);
-
 std::mutex              gLock;
 std::condition_variable gNotify;
 raw_sock_recv_info gRawSockRecvInfo =
@@ -27,7 +26,8 @@ raw_sock_recv_info gRawSockRecvInfo =
     0,
     recv_tcp_cb,
     NULL,
-    recv_icmp_cb
+    recv_icmp_cb,
+    recv_arp_cb
 };
 void initEnvConf()
 {
@@ -180,21 +180,5 @@ static void data_recv(struct tcphdr *tcph, uint8_t* pData, int datalen)
     {
         std::unique_lock<std::mutex> lk(gLock);
         gNotify.notify_all();
-    }
-}
-
-void recv_icmp_cb(struct ip *iph, struct icmphdr *icmph, uint8_t* pData, int datalen)
-{
-    printf("recv_icmp_cb From %d.%d.%d.%d to %d.%d.%d.%d\n",
-        gRawSockEnvConf.remote_ip[0],gRawSockEnvConf.remote_ip[1],gRawSockEnvConf.remote_ip[2],gRawSockEnvConf.remote_ip[3],
-        gRawSockEnvConf.host_ip[0],gRawSockEnvConf.host_ip[1],gRawSockEnvConf.host_ip[2],gRawSockEnvConf.host_ip[3]);
-    printf("             type:%d code:%d datalen:%d\n",
-        icmph->type,icmph->code, datalen);
-    switch(icmph->type)
-    {
-    case ICMP_ECHO:
-        printf("             id:%d sequence:%d \n",
-            ntohs(icmph->un.echo.id),ntohs(icmph->un.echo.sequence));
-        break;
     }
 }

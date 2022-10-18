@@ -10,16 +10,19 @@
 #include <netinet/udp.h>       //
 #include <netinet/ip_icmp.h>  // struct icmp, ICMP_ECHO
 #include <net/if.h>           // struct ifreq
+#include <net/if_arp.h>
 #include "raw_sock_util.h"
 typedef void (*recv_tcp)(struct ip *iph, struct tcphdr *tcph, uint8_t* pData, int datalen);
 typedef void (*recv_udp)(struct ip *iph, struct udphdr *udph, uint8_t* pData, int datalen);
 typedef void (*recv_icmp)(struct ip *iph, struct icmphdr *icmph, uint8_t* pData, int datalen);
+typedef void (*recv_arp)(struct arphdr* arph, uint8_t* pData, int datalen);
 struct raw_sock_recv_info
 {
     int     sFd;
     recv_tcp recvTcpFun;
     recv_udp recvUdpFun;
     recv_icmp recvIcmpFun;
+    recv_arp recvArpFun;
 };
 
 int create_recv_raw(

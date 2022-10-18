@@ -26,7 +26,7 @@ int mk_buf_send_ack(uint8_t * data_raw, int len,
 
 int mk_buf_echoreply(uint8_t * data_raw, int len,
     uint16_t id, uint16_t sequence,
-    uint8_t * buff, int buff_len,
+    uint8_t * pData, int datalen,
     const raw_sock_env_conf* gRawSockEnvConf);
 
 
