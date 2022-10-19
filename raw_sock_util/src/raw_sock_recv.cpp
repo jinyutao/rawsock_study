@@ -50,9 +50,10 @@ static int read_raw(int fd, uint8_t* pdata, int len,uint8_t** pdata_IP)
         if(ret >= IFHWADDRLEN + IFHWADDRLEN + 2)
         {
             memcpy(&protocolType, pdata + 6 + 6, 2);
+            protocolType = ntohs(protocolType);
             if(!memcmp(pdata+6, gEnvConf->remote_mac, IFHWADDRLEN) &&
                 (!memcmp(pdata, gEnvConf->host_mac, IFHWADDRLEN)  ||
-                    protocolType != ETH_P_ARP))
+                    protocolType == ETH_P_ARP))
             {
                 * pdata_IP = pdata + 14;
                 break;
