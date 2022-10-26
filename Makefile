@@ -1,6 +1,9 @@
 
 CSRCS = \
 	tc8TestCase.cpp \
+	TCP_BASICS_13.cpp \
+	TCP_BASICS_14.cpp \
+	TCP_CALL_ABORT_03_03.cpp \
 	arp_proc.cpp \
 	icmp_proc.cpp \
 	proc_agv.cpp \

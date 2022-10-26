@@ -3,17 +3,14 @@
 #include <mutex>
 #include <condition_variable>
 #include "tc8TestCase.h"
-#include "raw_sock_recv.h"
-#include "raw_sock_send.h"
-#include "arp_proc.h"
-#include "icmp_proc.h"
+#include "proc_agv.h"
 
 uint32_t ack_no;
 uint32_t sn_no;
 uint32_t will_send_ack_no;
 uint32_t will_send_sn_no;
 raw_sock_env_conf gRawSockEnvConf;
-
+uint32_t base_sn = 0;
 uint8_t data[IP_MAXPACKET];
 static void recv_tcp_cb(struct ip *iph, struct tcphdr *tcph, uint8_t* pData, int datalen);
 static void sync_recv(struct tcphdr *tcph);
@@ -42,7 +39,7 @@ void initEnvConf()
     gRawSockEnvConf.host_ip[0] = 0xc0;
     gRawSockEnvConf.host_ip[1] = 0xa8;
     gRawSockEnvConf.host_ip[2] = 0x00;
-    gRawSockEnvConf.host_ip[3] = 0x0a; //  0x65;
+    gRawSockEnvConf.host_ip[3] = 0x09; //  0x65;
     gRawSockEnvConf.remote_ip[0] = 0xc0;
     gRawSockEnvConf.remote_ip[1] = 0xa8;
     gRawSockEnvConf.remote_ip[2] = 0x00;
@@ -54,11 +51,30 @@ void initEnvConf()
 
 int tc8_main_process()
 {
-    int datalen;
     initEnvConf();
 
     create_recv_raw(&gRawSockEnvConf, &gRawSockRecvInfo);
+    if(!globalArgs.pTastCaseInfo)
+    {
+        return tc8_unknow();
+    }
+    printf("Test Case : %s\nstart Test. \n", globalArgs.pTastCaseInfo->TestName);
+    switch(globalArgs.pTastCaseInfo->testCase)
+    {
+        case TCP_BASICS_13:
+            return tc8_TCP_BASICS_13();
+        case TCP_BASICS_14:
+            return tc8_TCP_BASICS_14();
+        case TCP_CALL_ABORT_03_03:
+            return tc8_TCP_CALL_ABORT_03_03();
+        default: break;
+    }
+    return tc8_unknow();
+}
 
+int tc8_unknow()
+{
+    int datalen;
     printf("wait fist push\n");
     // getchar();
     // {
@@ -76,11 +92,19 @@ int tc8_main_process()
         will_send_sn_no, will_send_ack_no, &gRawSockEnvConf);
     send_row_data(gRawSockRecvInfo.sFd, data, datalen, &gRawSockEnvConf);
 
+    getchar();
+
+    // datalen = mk_buf_send_fin(data, IP_MAXPACKET,
+    //     will_send_sn_no, will_send_ack_no, &gRawSockEnvConf);
+
+    datalen = mk_buf_send_ack(data, IP_MAXPACKET,
+                will_send_sn_no, will_send_ack_no, &gRawSockEnvConf);
+    send_row_data(gRawSockRecvInfo.sFd, data, datalen, &gRawSockEnvConf);
+
     printf("BYEBYE\n");
     getchar();
     return 0;
 }
-
 static void recv_tcp_cb(struct ip *iph, struct tcphdr *tcph, uint8_t* pData, int datalen)
 {
     printf("sync_recv From %d.%d.%d.%d:%d to %d.%d.%d.%d:%d\n",
@@ -105,7 +129,34 @@ static void recv_tcp_cb(struct ip *iph, struct tcphdr *tcph, uint8_t* pData, int
         printf("PUSH ");
     printf("\n");
     printf("data len :%d \n",datalen);
+    if(tcph->th_flags & TH_ACK)
+    {
+        printf("remote_port : %d th_sport:%d\n", gRawSockEnvConf.remote_port,ntohs(tcph->th_sport));
+        if(gRawSockEnvConf.remote_port == ntohs(tcph->th_sport))
+        {
+            bool flg = (will_send_sn_no == base_sn);
+            ack_no = ntohl(tcph->th_ack);
+            sn_no = ntohl(tcph->th_seq);
+            will_send_ack_no = sn_no + 1;
+            will_send_sn_no = ack_no;
 
+            switch (globalArgs.pTastCaseInfo->testCase)
+            {
+            case TCP_BASICS_14:
+                if(flg)
+                {
+                    datalen = mk_buf_send_fin(data, IP_MAXPACKET,
+                        will_send_sn_no, sn_no, &gRawSockEnvConf);
+                    send_row_data(gRawSockRecvInfo.sFd, data, datalen, &gRawSockEnvConf);
+                }
+                break;
+
+            default:
+                break;
+            }
+
+        }
+    }
     if (tcph->th_flags & TH_SYN)
     {
         sync_recv(tcph);
@@ -119,6 +170,21 @@ static void recv_tcp_cb(struct ip *iph, struct tcphdr *tcph, uint8_t* pData, int
     {
         uint16_t tmp_port = gRawSockEnvConf.remote_port;
         gRawSockEnvConf.remote_port = ntohs(tcph->th_sport);
+
+        switch (globalArgs.pTastCaseInfo->testCase)
+        {
+        case TCP_BASICS_14:
+            if(!on_can_recvACK_TCP_BASICS_14())
+            {
+
+                return;
+            }
+            break;
+
+        default:
+            break;
+        }
+
         ack_no = ntohl(tcph->th_ack);
         sn_no = ntohl(tcph->th_seq);
 
@@ -158,6 +224,10 @@ static void sync_recv(struct tcphdr *tcph)
 
     will_send_ack_no = sn_no + 1;
     will_send_sn_no = sn_no + 1024;
+    if(base_sn == 0)
+    {
+        base_sn = will_send_sn_no;
+    }
 
     int datalen = mk_buf_send_sync_recv(data, IP_MAXPACKET,
         will_send_sn_no, will_send_ack_no, &gRawSockEnvConf);
