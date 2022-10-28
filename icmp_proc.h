@@ -3,8 +3,8 @@
 
 #include <raw_sock_recv.h>
 
-extern raw_sock_env_conf gRawSockEnvConf;
+extern raw_sock_local_env_conf gRawLocalEnvConf;
 extern raw_sock_recv_info gRawSockRecvInfo;
-void recv_icmp_cb(struct ip *iph, struct icmphdr *icmph, uint8_t* pData, int datalen);
+void recv_icmp_cb(struct ethhdr * ethh, struct ip *iph, struct icmphdr *icmph, uint8_t* pData, int datalen);
 
 #endif //ICMP_PROC_H

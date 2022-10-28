@@ -6,6 +6,7 @@ enum enumTestCase
     TCP_BASICS_13,
     TCP_BASICS_14,
     TCP_CALL_ABORT_03_03,
+    TCP_CALL_RECEIVE_04_02,
     TEST_DUMY,
     MAX_TYPE
 };
@@ -21,6 +22,7 @@ struct stParTastName
 
 struct globalArgs_t
 {
+    bool debug;
     stParTastName* pTastCaseInfo;
 };
 extern struct globalArgs_t globalArgs;

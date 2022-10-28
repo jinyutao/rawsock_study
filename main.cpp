@@ -9,6 +9,7 @@
 
 struct globalArgs_t globalArgs =
 {
+    0,
     NULL
 };
 

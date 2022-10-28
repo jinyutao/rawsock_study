@@ -14,11 +14,11 @@
 #include <pthread.h>
 
 static const raw_sock_recv_info* gCBFun = NULL;
-static const raw_sock_env_conf* gEnvConf = NULL;
+static const raw_sock_local_env_conf* gEnvConf = NULL;
 
 static void* run_recv_cb(void* p);
 int create_recv_raw(
-    const raw_sock_env_conf* pRawSockEnvConf,
+    const raw_sock_local_env_conf* pRawSockEnvConf,
     const raw_sock_recv_info* pRawSockRecvInfo)
 {
     if(gCBFun || gEnvConf)
@@ -51,7 +51,7 @@ static int read_raw(int fd, uint8_t* pdata, int len,uint8_t** pdata_IP)
         {
             memcpy(&protocolType, pdata + 6 + 6, 2);
             protocolType = ntohs(protocolType);
-            if(!memcmp(pdata+6, gEnvConf->remote_mac, IFHWADDRLEN) &&
+            if(/*!memcmp(pdata+6, gEnvConf->remote_mac, IFHWADDRLEN) && */
                 (!memcmp(pdata, gEnvConf->host_mac, IFHWADDRLEN)  ||
                     protocolType == ETH_P_ARP))
             {
@@ -86,6 +86,7 @@ static void* run_recv_cb(void* p)
         {
             continue;
         }
+        struct ethhdr * ethh = (struct ethhdr *)buff;
         // check IP
         memcpy(&protocolType, buff + 6 + 6, 2);
         protocolType = ntohs(protocolType);
@@ -107,7 +108,7 @@ static void* run_recv_cb(void* p)
                 struct tcphdr *tcph = (struct tcphdr *)pdataTCP;
                 int offset = iph->ip_hl *4 + tcph->doff*4;
                 if(gCBFun->recvTcpFun)
-                    gCBFun->recvTcpFun(iph, tcph,
+                    gCBFun->recvTcpFun(ethh, iph, tcph,
                         pdataTCP + offset, ntohs(iph->ip_len) - offset);
                 break;
             }
@@ -116,7 +117,7 @@ static void* run_recv_cb(void* p)
                 uint8_t*  pdataUDP = pdataIP + (pdataIP[0] & 0x0F) * 4 ;
                 struct udphdr *udph = (struct udphdr *)pdataUDP;
                 if(gCBFun->recvUdpFun)
-                    gCBFun->recvUdpFun(iph, udph,
+                    gCBFun->recvUdpFun(ethh, iph, udph,
                         pdataUDP + sizeof(udphdr), ntohs(udph->len) - sizeof(udphdr));
                 break;
             }
@@ -125,7 +126,7 @@ static void* run_recv_cb(void* p)
                 uint8_t*  picmpICMP = pdataIP + (pdataIP[0] & 0x0F) * 4 ;
                 struct icmphdr *icmph = (struct icmphdr *)picmpICMP;
                 if(gCBFun->recvIcmpFun)
-                    gCBFun->recvIcmpFun(iph, icmph,
+                    gCBFun->recvIcmpFun(ethh, iph, icmph,
                         picmpICMP + sizeof(icmphdr), ntohs(iph->ip_len) - (pdataIP[0] & 0x0F) * 4 - sizeof(icmphdr));
                 break;
             }
@@ -136,7 +137,7 @@ static void* run_recv_cb(void* p)
         {
             struct arphdr *arph = (struct arphdr *)pdataIP;
             if(gCBFun->recvArpFun)
-                gCBFun->recvArpFun(arph, pdataIP + sizeof(struct arphdr),
+                gCBFun->recvArpFun(ethh, arph, pdataIP + sizeof(struct arphdr),
                     IP_MAXPACKET - sizeof(struct arphdr));
             break;
         }
