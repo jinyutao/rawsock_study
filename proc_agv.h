@@ -7,6 +7,7 @@ enum enumTestCase
     TCP_BASICS_14,
     TCP_CALL_ABORT_03_03,
     TCP_CALL_RECEIVE_04_02,
+    TCP_CALL_RECEIVE_04_03,
     TEST_DUMY,
     MAX_TYPE
 };

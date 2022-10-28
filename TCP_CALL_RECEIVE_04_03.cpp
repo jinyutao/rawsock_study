@@ -7,24 +7,33 @@
 #include "raw_sock_recv.h"
 #include "raw_sock_send.h"
 
-static bool canSend_CALL_RECEIVE_04_02 = false;
+static bool canSend_CALL_RECEIVE_04_03 = false;
 static int finCnt = 0;
 
-static std::mutex              gLockTCP_CALL_RECEIVE_04_02;
-static std::condition_variable gNotifyTCP_CALL_RECEIVE_04_02;
+static std::mutex              gLockTCP_CALL_RECEIVE_04_03;
+static std::condition_variable gNotifyTCP_CALL_RECEIVE_04_03;
 
-int tc8_TCP_CALL_RECEIVE_04_02()
+int tc8_TCP_CALL_RECEIVE_04_03()
 {
     int datalen;
     printf("wait fist push\n");
     uint8_t payload[]={'s','s','z'};
 
     {
-        std::unique_lock<std::mutex> lk(gLockTCP_CALL_RECEIVE_04_02);
-        while(!canSend_CALL_RECEIVE_04_02)
-            gNotifyTCP_CALL_RECEIVE_04_02.wait(lk);
+        std::unique_lock<std::mutex> lk(gLockTCP_CALL_RECEIVE_04_03);
+        while(!canSend_CALL_RECEIVE_04_03)
+            gNotifyTCP_CALL_RECEIVE_04_03.wait(lk);
     }
     // getchar();
+
+    send_row_data(
+        gRawSockRecvInfo.sFd,
+        data,
+        mk_buf_send_ack(data, IP_MAXPACKET,
+            gpTestRemoteSessionInfo->will_send_sn_no,
+            gpTestRemoteSessionInfo->will_send_ack_no,
+            gpTestRemoteSessionInfo),
+        &gRawLocalEnvConf);
 
     printf("Connected send data 3 * 5\n");
 
@@ -78,13 +87,13 @@ int tc8_TCP_CALL_RECEIVE_04_02()
     getchar();
     return 0;
 }
-void on_cansend_TCP_CALL_RECEIVE_04_02()
+void on_cansend_TCP_CALL_RECEIVE_04_03()
 {
-    std::unique_lock<std::mutex> lk(gLockTCP_CALL_RECEIVE_04_02);
+    std::unique_lock<std::mutex> lk(gLockTCP_CALL_RECEIVE_04_03);
     finCnt ++;
-    if(!canSend_CALL_RECEIVE_04_02 && finCnt>=2)
+    if(!canSend_CALL_RECEIVE_04_03 && finCnt>=2)
     {
-        canSend_CALL_RECEIVE_04_02 = true;
-        gNotifyTCP_CALL_RECEIVE_04_02.notify_all();
+        canSend_CALL_RECEIVE_04_03 = true;
+        gNotifyTCP_CALL_RECEIVE_04_03.notify_all();
     }
 }

@@ -71,6 +71,8 @@ int tc8_main_process()
             return tc8_TCP_CALL_ABORT_03_03();
         case TCP_CALL_RECEIVE_04_02:
             return tc8_TCP_CALL_RECEIVE_04_02();
+        case TCP_CALL_RECEIVE_04_03:
+            return tc8_TCP_CALL_RECEIVE_04_03();
         default: break;
     }
     return tc8_unknow();
@@ -197,6 +199,10 @@ static void recv_tcp_cb(struct ethhdr * ethh, struct ip *iph, struct tcphdr *tcp
     }
     if(tcph->th_flags & TH_FIN)
     {
+        pSessionInfo->recv_ack_no = ntohl(tcph->th_ack);
+        pSessionInfo->recv_sn_no = ntohl(tcph->th_seq);
+        pSessionInfo->will_send_ack_no = pSessionInfo->recv_sn_no + 1;
+
         if(gpTestRemoteSessionInfo == pSessionInfo)
         {
             switch (globalArgs.pTastCaseInfo->testCase)
@@ -210,16 +216,13 @@ static void recv_tcp_cb(struct ethhdr * ethh, struct ip *iph, struct tcphdr *tcp
             case TCP_CALL_RECEIVE_04_02:
                 on_cansend_TCP_CALL_RECEIVE_04_02();
                 return;
+            case TCP_CALL_RECEIVE_04_03:
+                on_cansend_TCP_CALL_RECEIVE_04_03();
+                return;
             default:
                 break;
             }
         }
-
-        pSessionInfo->recv_ack_no = ntohl(tcph->th_ack);
-        pSessionInfo->recv_sn_no = ntohl(tcph->th_seq);
-
-        pSessionInfo->will_send_ack_no = pSessionInfo->recv_sn_no + 1;
-        // pSessionInfo->will_send_sn_no = pSessionInfo->ack_no;
 
         send_row_data(
             gRawSockRecvInfo.sFd,

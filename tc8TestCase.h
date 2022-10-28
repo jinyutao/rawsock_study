@@ -25,6 +25,9 @@ int tc8_TCP_CALL_ABORT_03_03();
 int tc8_TCP_CALL_RECEIVE_04_02();
 void on_cansend_TCP_CALL_RECEIVE_04_02();
 
+int tc8_TCP_CALL_RECEIVE_04_03();
+void on_cansend_TCP_CALL_RECEIVE_04_03();
+
 int tc8_unknow();
 
 #define wLog(...) \

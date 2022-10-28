@@ -26,6 +26,7 @@ stParTastName gTastName[] =
     {"NO19", "TCP_BASICS_14", TCP_BASICS_14,true},
     {"NO55", "TCP_CALL_ABORT_03_03", TCP_CALL_ABORT_03_03,true},
     {"NO49", "TCP_CALL_RECEIVE_04_02", TCP_CALL_RECEIVE_04_02,true},
+    {"NO50", "TCP_CALL_RECEIVE_04_03", TCP_CALL_RECEIVE_04_03,true},
     {NULL, NULL, MAX_TYPE},
 };
 
