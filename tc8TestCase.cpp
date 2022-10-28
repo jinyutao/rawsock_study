@@ -118,29 +118,29 @@ static void recv_tcp_cb(struct ethhdr * ethh, struct ip *iph, struct tcphdr *tcp
     {
         return;
     }
-    printf("sync_recv From %d.%d.%d.%d:%d to %d.%d.%d.%d:%d\n",
+    wLog("sync_recv From %d.%d.%d.%d:%d to %d.%d.%d.%d:%d\n",
         remote_ip[0],remote_ip[1],remote_ip[2],remote_ip[3], ntohs(tcph->th_sport),
         host_ip[0],host_ip[1],host_ip[2],host_ip[3], ntohs(tcph->th_dport));
 
 
-    printf("seq: %u ack_seq:%u \n flags: ",
+    wLog("seq: %u ack_seq:%u \n flags: ",
         ntohl(tcph->th_seq),
         ntohl(tcph->th_ack));
 
     if (tcph->th_flags & TH_SYN)
-        printf("SYN ");
+        wLog("SYN ");
     if (tcph->th_flags & TH_ACK)
-        printf("ACK ");
+        wLog("ACK ");
     if (tcph->th_flags & TH_FIN)
-        printf("FIN ");
+        wLog("FIN ");
     if (tcph->th_flags & TH_RST)
-        printf("RST ");
+        wLog("RST ");
     if (tcph->th_flags & TH_URG)
-        printf("URG ");
+        wLog("URG ");
     if (tcph->th_flags & TH_PUSH)
-        printf("PUSH ");
-    printf("\n");
-    printf("data len :%d \n",datalen);
+        wLog("PUSH ");
+    wLog("\n");
+    wLog("data len :%d \n",datalen);
 
     raw_sock_session_info* pSessionInfo = getSession(iph, tcph, &gRawLocalEnvConf);
 
