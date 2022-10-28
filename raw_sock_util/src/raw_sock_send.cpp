@@ -165,6 +165,83 @@ int mk_buf_send_ack(uint8_t * data_raw, int len,
     return SEND_LEN(bufflen + ethlen);
 }
 
+int mk_buf_send_rst(uint8_t * data_raw, int len,
+    uint32_t snNo, uint32_t ackNo,
+    const raw_sock_session_info* gRawSessionInfo)
+{
+
+    int bufflen = 40;
+    uint8_t byte2[2];
+
+    snNo = htonl(snNo);
+    ackNo = htonl(ackNo);
+    uint16_t hostPort = htons(gRawSessionInfo->HostPort);
+    uint16_t remotePort = htons(gRawSessionInfo->RemotePort);
+
+    // Destination and Source MAC addresses
+    int ethlen = cp_eth_info(data_raw, len, gRawSessionInfo);
+
+    uint8_t * data = data_raw + ethlen;
+    data[0] = 0x45;
+    data[1] = 0;
+    data[2] = ((uint8_t*)&bufflen)[1];
+    data[3] = ((uint8_t*)&bufflen)[0];
+    data[4] = 0x00;
+    data[5] = 0x00;
+    data[6] = 0x00;
+    data[7] = 0x00;
+    data[8] = 0x40;
+    data[9] = 0x06;
+    data[10] = 0;//chk sum;
+    data[11] = 0;//chk sum;
+    memcpy(data + 12, gRawSessionInfo->HostIp, 4);
+    memcpy(data + 16, gRawSessionInfo->RemoteIp, 4);
+
+    uint16_t chk = chksum((uint16_t *)data, 20);
+    data[10] = (chk >> 8) & 0xFF;
+    data[11] = chk & 0xFF;
+
+    memcpy(byte2, &(hostPort), 2);
+    data[20] = byte2[0]; // 17018
+    data[21] = byte2[1]; // 17018
+    memcpy(byte2, &remotePort, 2);
+    data[22] = byte2[0]; // dport
+    data[23] = byte2[1]; // dport
+    // data[24] = 0x00; // snm
+    // data[25] = 0xea; // snm
+    // data[26] = 0x0d; // snm
+    // data[27] = 0x66; // snm
+    memcpy(data + 24, &snNo, 4);
+    // data[28] = 0x00; // ack no
+    // data[29] = 0x00; // ack no
+    // data[30] = 0x00; // ack no
+    // data[31] = 0x00; // ack no
+    memcpy(data + 28, &ackNo, 4);
+    data[32] = 0x50;
+    data[33] = TH_RST | TH_ACK;
+    data[34] = 0xff;
+    data[35] = 0xff;
+    data[36] = 0x00;//chk sum;
+    data[37] = 0x00;//chk sum;
+    data[38] = 0x00;
+    data[39] = 0x00;
+
+    // 构造伪头部
+    uint8_t checksum[IP_MAXPACKET];
+    memset(checksum, 0, IP_MAXPACKET);
+    memcpy(checksum, data + 12, 4); //源地址
+    memcpy(checksum +4, data + 16, 4); //目标地址
+    checksum[9] = data[9]; //协议
+    checksum[10] = 0; // TCP长度
+    checksum[11] = 20; // TCP长度
+    memcpy(checksum + 12, data + 20, 20); //数据
+    chk = chksum((uint16_t *)checksum, 20+12);
+    data[36] = (chk >> 8) & 0xFF;
+    data[37] = chk & 0xFF;
+    // printf("%02x %02x\n", data[36], data[37]);
+    return SEND_LEN(bufflen + ethlen);
+}
+
 int mk_buf_send_data(uint8_t * data_raw, int len,
     uint32_t snNo, uint32_t ackNo,
     uint8_t * sendPlayload, int PlayloadLen,

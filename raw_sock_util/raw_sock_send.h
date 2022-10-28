@@ -20,6 +20,10 @@ int mk_buf_send_fin(uint8_t * data_raw, int len,
     uint32_t snNo, uint32_t ackNo,
     const raw_sock_session_info* gRawSessionInfo);
 
+int mk_buf_send_rst(uint8_t * data_raw, int len,
+    uint32_t snNo, uint32_t ackNo,
+    const raw_sock_session_info* gRawSessionInfo);
+
 int mk_buf_send_ack(uint8_t * data_raw, int len,
     uint32_t snNo, uint32_t ackNo,
     const raw_sock_session_info* gRawSessionInfo);
