@@ -25,6 +25,7 @@ stParTastName gTastName[] =
     {"NO18", "TCP_BASICS_13", TCP_BASICS_13,true},
     {"NO19", "TCP_BASICS_14", TCP_BASICS_14,true},
     {"NO55", "TCP_CALL_ABORT_03_03", TCP_CALL_ABORT_03_03,true},
+    {"NO50", "TCP_CALL_RECEIVE_04_01", TCP_CALL_RECEIVE_04_01,true},
     {"NO49", "TCP_CALL_RECEIVE_04_02", TCP_CALL_RECEIVE_04_02,true},
     {"NO50", "TCP_CALL_RECEIVE_04_03", TCP_CALL_RECEIVE_04_03,true},
     {NULL, NULL, MAX_TYPE},
@@ -68,11 +69,14 @@ int proc_arg(int argc, char* argv[])
                         !strcmp(optarg, p->TestName))
                     {
                         globalArgs.pTastCaseInfo = p;
-                        return 1;
+                        break;
                     }
                 }
-                print_useage();
-                return 0;
+                if(globalArgs.pTastCaseInfo == &gTastDumy)
+                {
+                    print_useage();
+                    return 0;
+                }
                 break;
             }
             case 'D':

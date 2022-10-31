@@ -1,4 +1,5 @@
 #include <string.h>
+#include <unistd.h>
 #include <linux/if_ether.h>   // ETH_P_IP = 0x0800, ETH_P_IPV6 = 0x86DD
 #include <mutex>
 #include <condition_variable>
@@ -78,13 +79,16 @@ int tc8_TCP_CALL_RECEIVE_04_03()
     gpTestRemoteSessionInfo->will_send_sn_no += 3;
 
     printf("BYEBYE\n");
-    getchar();
+    while(gpTestRemoteSessionInfo->will_send_sn_no > gpTestRemoteSessionInfo->recv_ack_no)
+    {
+        usleep(1000);
+    }
     datalen = mk_buf_send_fin(data, IP_MAXPACKET,
         gpTestRemoteSessionInfo->will_send_sn_no,
         gpTestRemoteSessionInfo->will_send_ack_no,
         gpTestRemoteSessionInfo);
     send_row_data(gRawSockRecvInfo.sFd, data, datalen, &gRawLocalEnvConf);
-    getchar();
+    // getchar();
     return 0;
 }
 void on_cansend_TCP_CALL_RECEIVE_04_03()

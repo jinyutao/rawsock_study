@@ -69,6 +69,8 @@ int tc8_main_process()
             return tc8_TCP_BASICS_14();
         case TCP_CALL_ABORT_03_03:
             return tc8_TCP_CALL_ABORT_03_03();
+        case TCP_CALL_RECEIVE_04_01:
+            return tc8_TCP_CALL_RECEIVE_04_01();
         case TCP_CALL_RECEIVE_04_02:
             return tc8_TCP_CALL_RECEIVE_04_02();
         case TCP_CALL_RECEIVE_04_03:
@@ -188,6 +190,12 @@ static void recv_tcp_cb(struct ethhdr * ethh, struct ip *iph, struct tcphdr *tcp
                     pSessionInfo->will_send_sn_no ++;
                 }
                 break;
+            case TCP_CALL_RECEIVE_04_01:
+                if(flg)
+                {
+                    on_cansend_TCP_CALL_RECEIVE_04_01();
+                }
+                break;
             default:
                 break;
             }
@@ -214,6 +222,7 @@ static void recv_tcp_cb(struct ethhdr * ethh, struct ip *iph, struct tcphdr *tcp
                 }
                 break;
             case TCP_CALL_RECEIVE_04_02:
+                // 不应答 FIN 的 ack
                 on_cansend_TCP_CALL_RECEIVE_04_02();
                 return;
             case TCP_CALL_RECEIVE_04_03:
